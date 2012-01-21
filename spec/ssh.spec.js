@@ -43,6 +43,13 @@ describe('ssh', function () {
         expect(sshModule._exec).toHaveBeenCalledWith('-p 8005 10.0.1.20'.split(' '));
     });
 
+    it('uses privateKeyFile', function () {
+        nori.ssh('10.0.1.20', {
+            privateKeyFile: '/path/to/private-key'
+        });
+        expect(sshModule._exec).toHaveBeenCalledWith('-i /path/to/private-key 10.0.1.20'.split(' '));
+    });
+
     it('uses localForward', function () {
         nori.ssh('10.0.1.20', {
             localForward: {

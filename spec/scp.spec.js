@@ -63,6 +63,13 @@ describe('scp', function () {
         expect(scpModule._exec).toHaveBeenCalledWith('test.txt testuser@10.0.1.20:/home/testuser/somedir'.split(' '));
     });
 
+    it('uses privateKeyFile', function () {
+        nori.scp('test.txt', '10.0.1.20/home/testuser/somedir', {
+            privateKeyFile: '/path/to/private-key'
+        });
+        expect(scpModule._exec).toHaveBeenCalledWith('-i /path/to/private-key test.txt 10.0.1.20:/home/testuser/somedir'.split(' '));
+    });
+
     it('uses dest port', function () {
         nori.scp('test.txt', '10.0.1.20:9022/home/testuser/somedir');
         expect(scpModule._exec).toHaveBeenCalledWith('-P 9022 test.txt 10.0.1.20:/home/testuser/somedir'.split(' '));
