@@ -1,12 +1,13 @@
-var events = require('events');
 var _ = require('underscore');
+var events = require('events');
+var util = require('util');
 
 function ProcessSpy() {
     this.stdout = new events.EventEmitter();
     this.stderr = new events.EventEmitter();
 }
 
-ProcessSpy.prototype = new events.EventEmitter();
+util.inherits(ProcessSpy, events.EventEmitter);
 
 _.extend(ProcessSpy.prototype, {
 
