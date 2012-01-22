@@ -1,3 +1,4 @@
+var ProcessSpy = require('./process-spy');
 var _ = require('underscore');
 var childProcess = require('child_process');
 var events = require('events');
@@ -6,20 +7,7 @@ var scpModule = require('../lib/scp');
 
 describe('scp', function () {
 
-    var spyProcess = new events.EventEmitter();
-    _.extend(spyProcess, {
-        stdout: new events.EventEmitter(),
-        stderr: new events.EventEmitter(),
-        exit: function (code) {
-            this.emit('exit', code || 0);
-        },
-        sendStdOut: function (data) {
-            this.stdout.emit('data', data);
-        },
-        sendStdErr: function (data) {
-            this.stderr.emit('data', data);
-        }
-    });
+    var spyProcess = new ProcessSpy();
 
     beforeEach(function () {
         spyOn(scpModule, '_exec').andReturn(spyProcess);
@@ -96,18 +84,20 @@ describe('scp', function () {
             expect(callback).toHaveBeenCalled();
         });
 
-        it('includes exit code', function () {
-            nori.scp('test.txt', '10.0.1.20/home/testuser/somedir', {}, callback);
-            spyProcess.exit(123);
-            expect(callback).toHaveBeenCalledWith(123, '');
-        });
-
-        it('includes output from stdout and stderr', function () {
+        it('handles error', function () {
             nori.scp('test.txt', '10.0.1.20/home/testuser/somedir', {}, callback);
             spyProcess.sendStdOut('some ');
             spyProcess.sendStdErr('data');
-            spyProcess.exit();
-            expect(callback).toHaveBeenCalledWith(0, 'some data');
+            spyProcess.exit(123);
+            expect(callback).toHaveBeenCalledWith({code: 123}, 'some data');
+        });
+
+        it('handles success', function () {
+            nori.scp('test.txt', '10.0.1.20/home/testuser/somedir', {}, callback);
+            spyProcess.sendStdOut('some ');
+            spyProcess.sendStdErr('data');
+            spyProcess.exit(0);
+            expect(callback).toHaveBeenCalledWith(null, 'some data');
         });
     });
 });

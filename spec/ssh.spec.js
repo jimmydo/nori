@@ -1,14 +1,10 @@
+var ProcessSpy = require('./process-spy');
 var events = require('events');
 var nori = require('..');
 var sshModule = require('../lib/ssh');
 
 describe('ssh', function () {
-    var spyProcess = new events.EventEmitter();
-    spyProcess.stdout = jasmine.createSpyObj('stdout spy', ['on']);
-    spyProcess.stderr = jasmine.createSpyObj('stderr spy', ['on']);
-    spyProcess.exit = function () {
-        this.emit('exit');
-    };
+    var spyProcess = new ProcessSpy();
 
     beforeEach(function () {
         spyOn(sshModule, '_exec').andReturn(spyProcess);
@@ -78,11 +74,35 @@ describe('ssh', function () {
         expect(command).toBeTruthy();
     });
 
-    it('runs callback when done', function () {
-        var callback = jasmine.createSpy('callback');
-        nori.ssh('10.0.1.20', {}, callback);
-        expect(callback).not.toHaveBeenCalled();
-        spyProcess.exit();
-        expect(callback).toHaveBeenCalled();
+    describe('callback', function () {
+
+        var callback;
+
+        beforeEach(function () {
+            callback = jasmine.createSpy('callback');
+        });
+
+        it('runs when done', function () {
+            nori.ssh('10.0.1.20', {}, callback);
+            expect(callback).not.toHaveBeenCalled();
+            spyProcess.exit();
+            expect(callback).toHaveBeenCalled();
+        });
+
+        it('handles error', function () {
+            nori.ssh('10.0.1.20', {}, callback);
+            spyProcess.sendStdOut('some ');
+            spyProcess.sendStdErr('data');
+            spyProcess.exit(123);
+            expect(callback).toHaveBeenCalledWith({code: 123}, 'some data');
+        });
+
+        it('handles success', function () {
+            nori.ssh('10.0.1.20', {}, callback);
+            spyProcess.sendStdOut('some ');
+            spyProcess.sendStdErr('data');
+            spyProcess.exit(0);
+            expect(callback).toHaveBeenCalledWith(null, 'some data');
+        });
     });
 });
